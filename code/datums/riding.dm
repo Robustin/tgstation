@@ -64,18 +64,18 @@
 
 //MOVEMENT
 /datum/riding/proc/handle_ride(mob/user, direction)
-	if(user.incapacitated())
-		Unbuckle(user)
-		return
-
+	for(var/mob/rider in ridden.buckled_mobs)
+		if(rider.incapacitated())
+			Unbuckle(rider)
+			return
 	if(world.time < next_vehicle_move)
 		return
+	var/turf/targetm = get_step(get_turf(ridden), direction)
 	next_vehicle_move = world.time + vehicle_move_delay
 	if(keycheck(user))
 		if(!Process_Spacemove(direction) || !isturf(ridden.loc))
 			return
-		step(ridden, direction)
-
+		ridden.Move(targetm)
 		handle_vehicle_layer()
 		handle_vehicle_offsets()
 	else
@@ -111,7 +111,7 @@
 		ridden.layer = OBJ_LAYER
 
 /datum/riding/atv/turret
-	var/obj/machinery/porta_turret/syndicate/vehicle_turret/turret = null
+	var/obj/vehicle/atv/turret/R = null
 
 /datum/riding/atv/turret/handle_vehicle_layer()
 	if(ridden.dir == SOUTH)
@@ -119,31 +119,31 @@
 	else
 		ridden.layer = OBJ_LAYER
 
-	if(turret)
+	if(R.turret)
 		if(ridden.dir == NORTH)
-			turret.layer = ABOVE_MOB_LAYER
+			R.turret.layer = ABOVE_MOB_LAYER
 		else
-			turret.layer = OBJ_LAYER
+			R.turret.layer = OBJ_LAYER
 
 
 /datum/riding/atv/turret/handle_vehicle_offsets()
 	..()
-	if(turret)
-		turret.forceMove(get_turf(ridden))
+	R = ridden
+	if(R.turret)
+		R.turret.forceMove(get_turf(ridden))
 		switch(ridden.dir)
 			if(NORTH)
-				turret.pixel_x = 0
-				turret.pixel_y = 4
+				R.turret.pixel_x = 0
+				R.turret.pixel_y = 4
 			if(EAST)
-				turret.pixel_x = -12
-				turret.pixel_y = 4
+				R.turret.pixel_x = -12
+				R.turret.pixel_y = 4
 			if(SOUTH)
-				turret.pixel_x = 0
-				turret.pixel_y = 4
+				R.turret.pixel_x = 0
+				R.turret.pixel_y = 4
 			if(WEST)
-				turret.pixel_x = 12
-				turret.pixel_y = 4
-
+				R.turret.pixel_x = 12
+				R.turret.pixel_y = 4
 
 //pimpin ride
 /datum/riding/janicart
@@ -258,25 +258,81 @@
 	vehicle_move_delay = 0
 
 /datum/riding/space/speedwagon/handle_vehicle_offsets()
+	var/seat_number = 0
 	if(ridden.has_buckled_mobs())
 		for(var/m in ridden.buckled_mobs)
 			var/mob/living/buckled_mob = m
+			seat_number++
 			buckled_mob.setDir(ridden.dir)
 			ridden.pixel_x = -48
 			ridden.pixel_y = -48
-			switch(ridden.dir)
-				if(NORTH)
-					buckled_mob.pixel_x = -10
-					buckled_mob.pixel_y = -3
-				if(SOUTH)
-					buckled_mob.pixel_x = 16
-					buckled_mob.pixel_y = 3
-				if(EAST)
-					buckled_mob.pixel_x = -4
-					buckled_mob.pixel_y = 30
-				if(WEST)
-					buckled_mob.pixel_x = 4
-					buckled_mob.pixel_y = -1
+			if(seat_number == 1)
+				switch(ridden.dir)
+					if(NORTH)
+						buckled_mob.pixel_x = -10
+						buckled_mob.pixel_y = -4
+					if(SOUTH)
+						buckled_mob.pixel_x = 16
+						buckled_mob.pixel_y = 3
+					if(EAST)
+						buckled_mob.pixel_x = -4
+						buckled_mob.pixel_y = 30
+					if(WEST)
+						buckled_mob.pixel_x = 4
+						buckled_mob.pixel_y = -3
+
+			if(seat_number == 2)
+				switch(ridden.dir)
+					if(NORTH)
+						buckled_mob.pixel_x = 19
+						buckled_mob.pixel_y = -5
+						buckled_mob.layer = 4
+					if(SOUTH)
+						buckled_mob.pixel_x = -13
+						buckled_mob.pixel_y = 3
+						buckled_mob.layer = 4
+					if(EAST)
+						buckled_mob.pixel_x = -4
+						buckled_mob.pixel_y = -3
+						buckled_mob.layer = 4.1
+					if(WEST)
+						buckled_mob.pixel_x = 4
+						buckled_mob.pixel_y = 28
+						buckled_mob.layer = 3.9
+			if(seat_number == 3)
+				switch(ridden.dir)
+					if(NORTH)
+						buckled_mob.pixel_x = -10
+						buckled_mob.pixel_y = -18
+						buckled_mob.layer = 4.2
+					if(SOUTH)
+						buckled_mob.pixel_x = 16
+						buckled_mob.pixel_y = 25
+						buckled_mob.layer = 3.9
+					if(EAST)
+						buckled_mob.pixel_x = -22
+						buckled_mob.pixel_y = 30
+					if(WEST)
+						buckled_mob.pixel_x = 22
+						buckled_mob.pixel_y = -3
+						buckled_mob.layer = 4.1
+			if(seat_number == 4)
+				switch(ridden.dir)
+					if(NORTH)
+						buckled_mob.pixel_x = 19
+						buckled_mob.pixel_y = -18
+						buckled_mob.layer = 4.2
+					if(SOUTH)
+						buckled_mob.pixel_x = -13
+						buckled_mob.pixel_y = 25
+						buckled_mob.layer = 3.9
+					if(EAST)
+						buckled_mob.pixel_x = -22
+						buckled_mob.pixel_y = -3
+						buckled_mob.layer = 3.9
+					if(WEST)
+						buckled_mob.pixel_x = 22
+						buckled_mob.pixel_y = 28
 
 /datum/riding/space/speedwagon/handle_vehicle_layer()
 	ridden.layer = BELOW_MOB_LAYER
