@@ -334,6 +334,29 @@
 						buckled_mob.pixel_x = 22
 						buckled_mob.pixel_y = 28
 
+/datum/riding/space/speedwagon/warwagon
+	vehicle_move_delay = 1
+	var/obj/vehicle/space/speedbike/warwagon/R = null
+
+/datum/riding/space/speedwagon/warwagon/handle_vehicle_offsets()
+	..()
+	R = ridden
+	if(R.turret)
+		R.turret.forceMove(get_turf(ridden))
+		switch(ridden.dir)
+			if(NORTH)
+				R.turret.pixel_x = 3
+				R.turret.pixel_y = -30
+			if(EAST)
+				R.turret.pixel_x = -32
+				R.turret.pixel_y = 12
+			if(SOUTH)
+				R.turret.pixel_x = 2
+				R.turret.pixel_y = 35
+			if(WEST)
+				R.turret.pixel_x = 32
+				R.turret.pixel_y = 12
+
 /datum/riding/space/speedwagon/handle_vehicle_layer()
 	ridden.layer = BELOW_MOB_LAYER
 
