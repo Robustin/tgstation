@@ -493,3 +493,8 @@
 		if(rider in ridden.buckled_mobs)
 			ridden.unbuckle_mob(rider)
 	. = ..()
+
+
+// Manual Turrets
+
+/datum/riding/turret
