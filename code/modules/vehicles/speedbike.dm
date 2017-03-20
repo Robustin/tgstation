@@ -118,7 +118,7 @@
 	. = ..()
 	if(src.has_buckled_mobs())
 		for(var/atom/A in range(1, src))
-			if(!(A in src.buckled_mobs))
+			if(!(A in src.buckled_mobs || A in turret.buckled_mobs))
 				Bump(A)
 
 // Manned Turret
@@ -129,6 +129,7 @@
 	icon_state = "syndie_manned"
 	can_buckle = TRUE
 	buckle_lying = 0
+	layer = 4.2
 	var/view_range = 9
 	var/cooldown = 0
 	var/projectile_type = /obj/item/projectile/bullet/weakbullet3
@@ -172,6 +173,7 @@
 	flags = ABSTRACT | NODROP
 	resistance_flags = FIRE_PROOF | UNACIDABLE | ACID_PROOF | NOBLUDGEON
 
+
 /obj/item/weapon/turret_control/afterattack(atom/targeted_atom, mob/user)
 	..()
 	var/obj/machinery/manned_turret/E = user.buckled
@@ -180,28 +182,28 @@
 	switch(E.dir)
 		if(NORTH)
 			E.layer = 3.9
-			user.pixel_x = 0
-			user.pixel_y = -14
+			user.pixel_x = E.pixel_x
+			user.pixel_y = E.pixel_y - 14
 		if(EAST)
 			E.layer = 4.1
-			user.pixel_x = -14
-			user.pixel_y = 0
+			user.pixel_x = E.pixel_x - 14
+			user.pixel_y = E.pixel_y
 		if(SOUTH)
 			E.layer = 4.1
-			user.pixel_x = 0
-			user.pixel_y = 14
+			user.pixel_x = E.pixel_x
+			user.pixel_y = E.pixel_y + 14
 		if(WEST)
 			E.layer = 4.1
-			user.pixel_x = 14
-			user.pixel_y = 0
+			user.pixel_x = E.pixel_x + 14
+			user.pixel_y = E.pixel_y
 	E.fire(targeted_atom, user)
 
 /obj/machinery/manned_turret/proc/fire(atom/targeted_atom, mob/user)
 	if(world.time < cooldown)
 		return
-	INVOKE_ASYNC(src, .proc/shoot, targeted_atom, user)
-	cooldown = world.time+60
-
+	else
+		cooldown = world.time+60
+		INVOKE_ASYNC(src, .proc/shoot, targeted_atom, user)
 
 /obj/machinery/manned_turret/proc/shoot(atom/targeted_atom, mob/user)
 	var/turf/targets_from = get_turf(src)

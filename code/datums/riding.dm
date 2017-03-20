@@ -346,15 +346,15 @@
 		switch(ridden.dir)
 			if(NORTH)
 				R.turret.pixel_x = 3
-				R.turret.pixel_y = -30
+				R.turret.pixel_y = -37
 			if(EAST)
-				R.turret.pixel_x = -32
+				R.turret.pixel_x = -37
 				R.turret.pixel_y = 12
 			if(SOUTH)
 				R.turret.pixel_x = 2
-				R.turret.pixel_y = 35
+				R.turret.pixel_y = 42
 			if(WEST)
-				R.turret.pixel_x = 32
+				R.turret.pixel_x = 37
 				R.turret.pixel_y = 12
 
 /datum/riding/space/speedwagon/handle_vehicle_layer()
