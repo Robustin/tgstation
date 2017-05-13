@@ -175,6 +175,21 @@ research holder datum.
 		return
 	..()
 
+//Smelter files
+/datum/research/smelter/New()
+	for(var/T in (subtypesof(/datum/tech)))
+		possible_tech += new T(src)
+	for(var/path in subtypesof(/datum/design))
+		var/datum/design/D = new path(src)
+		possible_designs += D
+		if((D.build_type & SMELTER) && ("initial" in D.category))
+			AddDesign2Known(D)
+
+/datum/research/smelter/AddDesign2Known(datum/design/D)
+	if(!(D.build_type & SMELTER))
+		return
+	..()
+
 
 /***************************************************************
 **						Technology Datums					  **
@@ -188,6 +203,7 @@ research holder datum.
 	var/level = 1						//A simple number scale of the research level. Level 0 = Secret tech.
 	var/rare = 1						//How much CentCom wants to get that tech. Used in supply shuttle tech cost calculation.
 	var/list/req_tech = list()			//List of ids associated values of techs required to research this tech. "id" = #
+	var/exported_level = 0
 
 
 //Trunk Technologies (don't require any other techs and you start knowning them).
@@ -291,6 +307,10 @@ research holder datum.
 
 	if(current_level >= level)
 		return 0
+		
+	if(exported_level == level)
+		return 0
+	exported_level = level
 
 	var/cost = 0
 	for(var/i=current_level+1, i<=level, i++)
@@ -313,10 +333,10 @@ research holder datum.
 	var/list/tech_stored = list()
 	var/max_tech_stored = 1
 
-/obj/item/weapon/disk/tech_disk/New()
-	..()
-	src.pixel_x = rand(-5, 5)
-	src.pixel_y = rand(-5, 5)
+/obj/item/weapon/disk/tech_disk/Initialize()
+	. = ..()
+	pixel_x = rand(-5, 5)
+	pixel_y = rand(-5, 5)
 	for(var/i in 1 to max_tech_stored)
 		tech_stored += null
 
@@ -339,8 +359,8 @@ research holder datum.
 	materials = list()
 	max_tech_stored = 0
 
-/obj/item/weapon/disk/tech_disk/debug/New()
-	..()
+/obj/item/weapon/disk/tech_disk/debug/Initialize()
+	. = ..()
 	var/list/techs = subtypesof(/datum/tech)
 	max_tech_stored = techs.len
 	for(var/V in techs)
