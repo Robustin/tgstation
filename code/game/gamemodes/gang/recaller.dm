@@ -164,14 +164,14 @@
 /obj/item/device/gangtool/proc/recall(mob/user)
 	if(!can_use(user))
 		return 0
-		
+
 	if(SSticker.mode.forced_shuttle)
 		return 0
 
 	if(recalling)
 		to_chat(usr, "<span class='warning'>Error: Recall already in progress.</span>")
 		return 0
-	
+
 	if(!gang.recalls)
 		to_chat(usr, "<span class='warning'>Error: Unable to access communication arrays. Firewall has logged our signature and is blocking all further attempts.</span>")
 
@@ -215,7 +215,7 @@
 	userturf = get_turf(user)
 	if(userturf.z == 1) //Check one more time that they are on station.
 		if(SSshuttle.cancelEvac(user))
-			gang.recalls -= 1 
+			gang.recalls -= 1
 			return 1
 
 	to_chat(loc, "<span class='info'>\icon[src]No response recieved. Emergency shuttle cannot be recalled at this time.</span>")
@@ -245,3 +245,6 @@
 
 /obj/item/device/gangtool/spare/lt
 	promotable = 1
+
+/obj/item/device/gangtool/soldier/vigilante
+

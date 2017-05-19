@@ -25,9 +25,9 @@ GLOBAL_LIST_INIT(gang_colors_pool, list("red","orange","yellow","green","blue","
 	config_tag = "gang"
 	antag_flag = ROLE_GANG
 	restricted_jobs = list("Security Officer", "Warden", "Detective", "AI", "Cyborg","Captain", "Head of Personnel", "Head of Security", "Chief Engineer", "Research Director", "Chief Medical Officer")
-	required_players = 20
-	required_enemies = 2
-	recommended_enemies = 2
+	required_players = 1
+	required_enemies = 0
+	recommended_enemies = 0
 	enemy_minimum_age = 14
 	force_report = TRUE
 
@@ -49,7 +49,7 @@ GLOBAL_LIST_INIT(gang_colors_pool, list("red","orange","yellow","green","blue","
 			target_armory = pick(get_area_turfs(A))
 			if(target_armory)
 				break
-	
+
 	//also need to find 1 sec closet to hit the equipment room
 	for(var/area/security/main/A in GLOB.sortedAreas)
 		if(A.z == ZLEVEL_STATION)
@@ -61,7 +61,7 @@ GLOBAL_LIST_INIT(gang_colors_pool, list("red","orange","yellow","green","blue","
 	if(!target_armory || !target_equipment)
 		message_admins("No armory/equipment room detected, unable to start gang!")
 		return FALSE
-	
+
 
 	if(config.protect_roles_from_antagonist)
 		restricted_jobs += protected_jobs
@@ -100,50 +100,41 @@ GLOBAL_LIST_INIT(gang_colors_pool, list("red","orange","yellow","green","blue","
 	SSjob.DisableJob(/datum/job/warden)
 	SSjob.DisableJob(/datum/job/detective)
 	SSjob.DisableJob(/datum/job/officer)
+	SSjob.DisableJob(/datum/job/ai)
+	SSjob.DisableJob(/datum/job/cyborg)
+
+
+	SSticker.OnRoundstart(CALLBACK(src, .proc/gangpocalypse))
 
 	return 1
 
-/datum/game_mode/gang/send_intercept()
+/datum/game_mode/gang/proc/gangpocalypse()
 	set waitfor = FALSE
 	..(FALSE, FALSE)
-
-	priority_announce("Ballas Federation Announcement", "SECURITY SHOULD OF SIDED WITH THE BALLAS!", 'sound/machines/Alarm.ogg')
-
-	sleep(100)
-
-	explosion(target_armory, 7, 14, 28, 30, TRUE, TRUE)
-	explosion(target_equipment, 7, 14, 28, 30, TRUE, TRUE)
-
-	sleep(1200)
-
 	var/list/bosses = list()
-
 	for(var/datum/gang/G in gangs)
 		for(var/datum/mind/boss_mind in G.bosses)
 			bosses += boss_mind
-
-	for(var/datum/gang/G in gangs)
-		for(var/datum/mind/boss_mind in G.bosses)
-			var/list/other_bosses = bosses.Copy() - boss_mind
-			var/msg = "<span class='danger'>You've decided to take charge of the situation and form the [G.name] gang."
-			for(var/J in 1 to other_bosses.len)
-				var/datum/mind/other_mind = other_bosses[J]
-				if(J == other_bosses.len)
-					msg += " and"
-				msg += " [other_mind.current]"
-				if(J != other_bosses.len)
-					msg += ","
-			to_chat(boss_mind.current, "[msg] are your ganghead rivals. [syndicate_name()] has offered an uplink to help you take over, it will be delivered in five minutes.</span>")
+			//var/msg = "<span class='danger'>You are a local leader for the [G.name] gang, with security gone this station is ripe for the taking!"
 			forge_gang_objectives(boss_mind)
 			greet_gang(boss_mind)
-	
-	sleep(3000)
-	
-	for(var/datum/gang/G in gangs)
-		for(var/datum/mind/boss_mind in G.bosses)
 			G.add_gang_hud(boss_mind)
 			equip_gang(boss_mind.current,G)
 			modePlayer += boss_mind
+	sleep(50)
+	priority_announce("Excessive costs associated with lawsuits from employees injured by Security and Synthetic crew have compelled us to re-evaluate the personnel budget for new stations. Accordingly, this station will be expected to operate without Security or Synthetic assistance.", "Nanotrasen Board of Directors")
+	sleep(60)
+	priority_announce("Unfortunately we have also received reports of multiple criminal enterprises established in your sector. To assist in repelling this threat, we have implanted all crew with a device that will assist and incentivize the removal of all contraband and criminals. Enjoy your shift ", "Nanotrasen Board of Directors")
+	explosion(target_armory, 7, 14, 28, 30, TRUE, TRUE)
+	explosion(target_equipment, 7, 14, 28, 30, TRUE, TRUE)
+
+	for(var/mob/living/M in GLOB.player_list)
+		if(M in get_all_gangsters())
+			continue
+		vigilize()
+
+/datum/game_mode/gang/proc/vigilize()
+	world << "Vigilized someone"
 
 
 /datum/game_mode/proc/forge_gang_objectives(datum/mind/boss_mind)
