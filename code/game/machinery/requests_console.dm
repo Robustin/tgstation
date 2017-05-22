@@ -5,6 +5,8 @@ GLOBAL_LIST_EMPTY(req_console_assistance)
 GLOBAL_LIST_EMPTY(req_console_supplies)
 GLOBAL_LIST_EMPTY(req_console_information)
 GLOBAL_LIST_EMPTY(allConsoles)
+GLOBAL_VAR_INIT(distress_state, 0)
+GLOBAL_VAR_INIT(distress_cooldown, 7500)
 
 /obj/machinery/requests_console
 	name = "requests console"
@@ -60,9 +62,7 @@ GLOBAL_LIST_EMPTY(allConsoles)
 	obj_integrity = 300
 	max_integrity = 300
 	armor = list(melee = 70, bullet = 30, laser = 30, energy = 30, bomb = 0, bio = 0, rad = 0, fire = 90, acid = 90)
-	var/distress_state = 0
 	var/distress_ETA
-	var/cooldown = 9000
 
 /obj/machinery/requests_console/power_change()
 	..()
@@ -140,7 +140,7 @@ GLOBAL_LIST_EMPTY(allConsoles)
 	if(..())
 		return
 	var/dat = ""
-	if(department == "Security" && (world.time > GLOB.distress_cooldown))
+	if(department == "Security" && (world.time > GLOB.distress_cooldown) && GLOB.distress_state < 2)
 		distress_helper()
 	if(!open)
 		switch(screen)
@@ -248,12 +248,12 @@ GLOBAL_LIST_EMPTY(allConsoles)
 				dat += "<A href='?src=\ref[src];setScreen=1'>Request Assistance</A><BR>"
 				dat += "<A href='?src=\ref[src];setScreen=2'>Request Supplies</A><BR>"
 				dat += "<A href='?src=\ref[src];setScreen=3'>Relay Anonymous Information</A><BR><BR>"
-				if(distress_state>0)
-					if(distress_state == 1)
+				if(GLOB.distress_state > 0)
+					if(GLOB.distress_state == 1)
 						dat += "<A href='?src=\ref[src];distress=1'><font color='red'>Transmit Distress Signal</font></B></A><BR><BR>"
 					else
 						dat += "<B><font color='red'>Distress transmission in progress, ETA: [round(distress_ETA - world.time)] seconds.</font></B><BR>"
-						dat += "<A href='?src=\ref[src];distress=2'><font color='red'>Terminate Distress Signal</font></B></A><BR><BR>"
+						dat += "<A href='?src=\ref[src];distress=1'><font color='red'>Terminate Distress Signal</font></B></A><BR><BR>"
 				if(!emergency)
 					dat += "<A href='?src=\ref[src];emergency=1'>Emergency: Security</A><BR>"
 					dat += "<A href='?src=\ref[src];emergency=2'>Emergency: Engineering</A><BR>"
@@ -341,24 +341,29 @@ GLOBAL_LIST_EMPTY(allConsoles)
 				addtimer(CALLBACK(src, .proc/clear_emergency), 3000)
 
 	if(href_list["distress"])
-		if(href_list["distress"] == 1)
+		if(GLOB.distress_state == 1)
 			if(world.time > GLOB.distress_cooldown)
 				if(SSshuttle.emergency.mode == SHUTTLE_CALL)
 					to_chat(usr, "<span class='notice'>Error: All communications arrays are currently directed towards the emergency shuttle.")
 					return
-				var/confirm = alert(usr, "Do you wish to send a distress signal to Centcom?", "For transparency and security purposes, the crew will be notified.", "Yes", "No")
+				var/confirm = alert(usr, "Do you wish to send a distress signal to Centcom?", "Distress Signal Failsafe Protocols", "Yes", "No")
 				if(confirm == "No")
 					return
 				announcementConsole = TRUE
-				GLOB.news_network.SubmitArticle("Distress signal activation key has been confirmed via this console. Compiling encrypted distress signal, ETA: 75 seconds", department, "Security Failsafe Protocols", null)
-				distress_state = 2
+				minor_announce("Distress signal activation key has been confirmed via this console. Compiling encrypted distress signal, ETA: 75 seconds", "[department] Console Announcement:")
+				GLOB.distress_state = 2
 				distress_ETA = world.time + 750
+				emergency = "Distress query"
+				update_icon()
 				START_PROCESSING(SSobj, src)
+				return
 			else
 				to_chat(usr, "<span class='notice'>Distress signal transponders are currently offline.")
-		if(href_list["distress"] == 2)
-			GLOB.news_network.SubmitArticle("Distress signal has been terminated.", department, "Security Failsafe Protocols", null)
-			distress_state = 0
+		else
+			minor_announce("Distress signal has been terminated", "Distress Failsafe Announcement:")
+			GLOB.distress_state = 0
+			emergency = FALSE
+			update_icon()
 			GLOB.distress_cooldown = world.time + 1200
 
 	if(href_list["department"] && message )
@@ -492,12 +497,12 @@ GLOBAL_LIST_EMPTY(allConsoles)
 		if(M.assigned_role in list("Security Officer", "Detective", "Warden", "Captain", "Head of Security"))
 			loyal_crew_minds += M
 	if(LAZYLEN(loyal_crew_minds) == 0)
-		distress_state = 1
+		GLOB.distress_state = 1
 		return
 	var/antag_ratio = antagonist_crew_minds.len / loyal_crew_minds.len
 	var/living_ratio = living_crew_bodies.len / GLOB.joined_player_list.len
 	if(antag_ratio >= 3 || living_ratio < 0.5)
-		distress_state = 1
+		GLOB.distress_state = 1
 
 /obj/machinery/requests_console/proc/clear_emergency()
 	emergency = null
@@ -584,24 +589,30 @@ GLOBAL_LIST_EMPTY(allConsoles)
 	return ..()
 
 /obj/machinery/requests_console/process()
-	if(distress_state != 2)
+	if(GLOB.distress_state != 2)
 		STOP_PROCESSING(SSobj, src)
 		return
 	if(QDELETED(src) || stat)
-		GLOB.news_network.SubmitArticle("Distress signal has been terminated.", "Error", "Security Failsafe Protocols", null)
+		minor_announce("Distress signal has been terminated.", "Security Failsafe Protocols")
 		GLOB.distress_cooldown = world.time + 1200
+		GLOB.distress_state = 0
+		emergency = null
+		update_icon()
 		STOP_PROCESSING(SSobj, src)
 		return
 	if(world.time >= distress_ETA)
-		distress_state = -1
-		GLOB.news_network.SubmitArticle("Distress signal has been successfully transmitted.", department, "Security Failsafe Protocols", null)
+		GLOB.distress_state = 3
+		minor_announce("Distress signal has been successfully transmitted. Security personnel have been dispatched to investigate.", "Security Failsafe Protocols")
+		emergency = null
+		update_icon()
 		sechelp()
+		STOP_PROCESSING(SSobj, src)
 
 /obj/machinery/requests_console/proc/sechelp()
 	for(var/i in 1 to 3)
-		var/mob/living/carbon/human/character = new(src)
-		var/equip = SSjob.EquipRank(character, "Security Officer", 1)
-		character = equip
+		var/mob/living/carbon/human/backup = new(src)
+		var/equip = SSjob.EquipRank(backup, "Security Officer", 1)
+		backup = equip
 		var/D
 		if(GLOB.latejoin.len)
 			D = get_turf(pick(GLOB.latejoin))
@@ -616,18 +627,16 @@ GLOBAL_LIST_EMPTY(allConsoles)
 					if(clear)
 						D = T
 						continue
-		character.loc = D
-		var/atom/movable/chair = locate(/obj/structure/chair) in character.loc
+		backup.forceMove(D)
+		var/atom/movable/chair = locate(/obj/structure/chair) in backup.loc
 		if(chair)
-			chair.buckle_mob(character)
-		GLOB.data_core.manifest_inject(character)
+			chair.buckle_mob(backup)
+		GLOB.data_core.manifest_inject(backup)
 		if(SSshuttle.arrivals)
-			SSshuttle.arrivals.QueueAnnounce(character, "Security Officer")
+			SSshuttle.arrivals.QueueAnnounce(backup, "Central Security Officer")
 		else
-			AnnounceArrival(character, "Security Officer")
-		if(GLOB.highlander)
-			to_chat(character, "<span class='userdanger'><i>THERE CAN BE ONLY ONE!!!</i></span>")
-			character.make_scottish()
-		GLOB.joined_player_list += character.ckey
-		if(!offer_control(character, "Would you like to play the role of a Security Officer responding to the distress signal?", "You are a Security Officer who has been dispatched as part of a small team to investigate a distress signal from the [department] request console. You have no other information, head to the [department] console and investigate."))
-			qdel(character)
+			AnnounceArrival(backup, "Central Security Officer")
+		if(offer_control(backup, "Would you like to play the role of a Security Officer responding to the distress signal?", "You are a Security Officer who has been dispatched as part of a small team to investigate a distress signal from the [department] request console. You have no other information, head to the [department] console and investigate."))
+			GLOB.joined_player_list += backup.ckey
+		else
+			qdel(backup)
