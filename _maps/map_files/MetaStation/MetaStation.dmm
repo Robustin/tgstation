@@ -54268,7 +54268,6 @@
 /area/maintenance/disposal/incinerator)
 "bZD" = (
 /obj/machinery/door/airlock/maintenance{
-	abandoned = 0;
 	name = "Incinerator Access";
 	req_access_txt = "12"
 	},
