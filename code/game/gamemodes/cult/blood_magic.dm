@@ -390,6 +390,7 @@
 
 //Stun
 /obj/item/melee/blood_magic/stun
+	name = "Stunning Aura "
 	color = "#ff0000" // red
 	invocation = "Fuu ma'jin!"
 
@@ -425,6 +426,7 @@
 
 //Teleportation
 /obj/item/melee/blood_magic/teleport
+	name = "Shifting Aura"
 	color = RUNE_COLOR_TELEPORT
 	desc = "A potent spell that teleport cultists on contact."
 	invocation = "Sas'so c'arta forbici!"
@@ -469,7 +471,7 @@
 
 //Shackles
 /obj/item/melee/blood_magic/shackles
-	name = "Shadow Shackles"
+	name = "Binding Aura"
 	desc = "Allows you to bind a victim and temporarily silence them."
 	invocation = "In'totum Lig'abis!"
 	color = "#000000" // black
@@ -519,7 +521,7 @@
 
 //Construction: Creates a construct shell out of 25 metal sheets, or converts plasteel into runed metal
 /obj/item/melee/blood_magic/construction
-	name = "Twisted Construction"
+	name = "Corrupting Aura"
 	desc = "Corrupts metal and plasteel into more sinister forms."
 	invocation = "Ethra p'ni dedol!"
 	color = "#000000" // black
@@ -584,7 +586,7 @@
 
 //Armor: Gives the target a basic cultist combat loadout
 /obj/item/melee/blood_magic/armor
-	name = "Sinister Armaments"
+	name = "Bladed Aura"
 	desc = "A spell that will equip the target with cultist equipment if there is a slot to equip it to."
 	color = "#33cc33" // green
 
@@ -605,7 +607,7 @@
 		..()
 
 /obj/item/melee/blood_magic/manipulator
-	name = "Blood Rite"
+	name = "Ritual Aura"
 	desc = "A spell that will absorb blood from anything you touch.<br>Touching cultists and constructs can heal them.<br><b>Clicking the hand will potentially let you focus the spell into something stronger.</b>"
 	color = "#7D1717"
 
