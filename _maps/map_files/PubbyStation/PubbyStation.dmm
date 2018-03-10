@@ -8107,7 +8107,7 @@
 	height = 5;
 	id = "laborcamp_home";
 	name = "fore bay 1";
-	roundstart_template = /datum/map_template/shuttle/labour/box;
+	roundstart_template = !INVALID_VALUE!;
 	width = 9
 	},
 /turf/open/space/basic,
@@ -22970,7 +22970,7 @@
 	height = 5;
 	id = "mining_home";
 	name = "mining shuttle bay";
-	roundstart_template = /datum/map_template/shuttle/mining/delta;
+	roundstart_template = !INVALID_VALUE!;
 	width = 7
 	},
 /turf/open/space/basic,
@@ -23348,7 +23348,7 @@
 	height = 13;
 	id = "arrivals_stationary";
 	name = "pubby arrivals";
-	roundstart_template = /datum/map_template/shuttle/arrival/pubby;
+	roundstart_template = !INVALID_VALUE!;
 	width = 6
 	},
 /turf/open/space/basic,
@@ -31835,6 +31835,7 @@
 /obj/item/folder/white,
 /obj/item/clothing/gloves/color/latex,
 /obj/structure/table/glass,
+/obj/machinery/smoke_machine,
 /turf/open/floor/plasteel/yellow/side{
 	dir = 8
 	},
@@ -50047,9 +50048,6 @@
 	},
 /turf/open/floor/plasteel/dark,
 /area/chapel/office)
-"cBP" = (
-/turf/open/floor/plasteel/white,
-/area/medical/chemistry)
 "cBQ" = (
 /obj/machinery/power/rad_collector,
 /turf/open/floor/plating,
@@ -50260,6 +50258,10 @@
 	dir = 1
 	},
 /area/science/circuit)
+"eBb" = (
+/obj/machinery/smoke_machine,
+/turf/open/floor/plasteel/white,
+/area/medical/chemistry)
 "fvG" = (
 /turf/open/floor/plasteel/whitepurple/side{
 	dir = 6
@@ -82182,7 +82184,7 @@ brl
 bsL
 bul
 bwU
-cBP
+eBb
 bsK
 bAg
 bpY
