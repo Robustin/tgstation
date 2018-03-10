@@ -16,6 +16,7 @@
 	var/amount = 4
 	var/lifetime = 5
 	var/opaque = 1 //whether the smoke can block the view when in enough amount
+	var/residue = TRUE //Whether the smoke affects Turf
 
 
 /obj/effect/particle_effect/smoke/proc/fade_out(frames = 16)
@@ -230,8 +231,8 @@
 			if(T.intact && AM.level == 1) //hidden under the floor
 				continue
 			reagents.reaction(AM, TOUCH, fraction)
-
-		reagents.reaction(T, TOUCH, fraction)
+		if(residue)
+			reagents.reaction(T, TOUCH, fraction)
 		return 1
 
 /obj/effect/particle_effect/smoke/chem/smoke_mob(mob/living/carbon/M)
