@@ -90,7 +90,7 @@
 	projectiletype = /obj/item/projectile/beam/disabler
 	ranged_cooldown_time = 20
 	projectilesound = 'sound/weapons/taser2.ogg'
-	loot = list(/obj/effect/decal/cleanable/robot_debris, /obj/item/ore/bluespace_crystal)
+	loot = list(/obj/effect/decal/cleanable/robot_debris, /obj/item/stack/ore/bluespace_crystal)
 	del_on_death = 1
 	deathmessage = "explodes with a sharp pop!"
 	light_color = LIGHT_COLOR_CYAN
@@ -478,6 +478,11 @@
 	S.start()
 	playsound(src,'sound/effects/sparks4.ogg',50,1)
 	do_teleport(target, F, 0)
+
+/mob/living/simple_animal/hostile/swarmer/electrocute_act(shock_damage, obj/source, siemens_coeff = 1, safety = FALSE, tesla_shock = FALSE, illusion = FALSE, stun = TRUE)
+	if(!tesla_shock)
+		return FALSE
+	return ..()
 
 /mob/living/simple_animal/hostile/swarmer/proc/DismantleMachine(obj/machinery/target)
 	do_attack_animation(target)

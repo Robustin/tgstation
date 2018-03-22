@@ -1,5 +1,3 @@
-#define DEBUG					//Enables byond profiling and full runtime logs - note, this may also be defined in your .dme file
-								//Enables in-depth debug messages to runtime log (used for debugging)
 //#define TESTING				//By using the testing("message") proc you can create debug-feedback for people with this
 								//uncommented, but not visible in the release version)
 
@@ -13,10 +11,10 @@
 //#define VISUALIZE_ACTIVE_TURFS	//Highlights atmos active turfs in green
 #endif
 
-//#define UNIT_TESTS			//Enables unit tests via TEST_RUN_PARAMETER 
+//#define UNIT_TESTS			//Enables unit tests via TEST_RUN_PARAMETER
 
 #ifndef PRELOAD_RSC				//set to:
-#define PRELOAD_RSC	0			//	0 to allow using external resources or on-demand behaviour;
+#define PRELOAD_RSC	2			//	0 to allow using external resources or on-demand behaviour;
 #endif							//	1 to use the default behaviour;
 								//	2 for preloading absolutely everything;
 

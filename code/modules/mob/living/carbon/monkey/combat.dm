@@ -1,3 +1,4 @@
+#define MAX_RANGE_FIND 32
 
 /mob/living/carbon/monkey
 	var/aggressive=0 // set to 1 using VV for an angry monkey
@@ -432,4 +433,5 @@
 			monkey_attack(pulledby)
 			retaliate(pulledby)
 			return TRUE
-	
+
+#undef MAX_RANGE_FIND

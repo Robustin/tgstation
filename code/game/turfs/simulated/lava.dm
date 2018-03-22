@@ -14,7 +14,10 @@
 /turf/open/lava/ex_act(severity, target)
 	contents_explosion(severity, target)
 
-/turf/open/lava/MakeSlippery(wet_setting = TURF_WET_WATER, min_wet_time = 0, wet_time_to_add = 0)
+/turf/open/lava/MakeSlippery()
+	return
+
+/turf/open/lava/acid_act(acidpwr, acid_volume)
 	return
 
 /turf/open/lava/MakeDry(wet_setting = TURF_WET_WATER)
@@ -122,6 +125,13 @@
 				var/mob/living/live = buckle_check
 				if("lava" in live.weather_immunities)
 					continue
+			if(iscarbon(L))
+				var/mob/living/carbon/C = L
+				var/obj/item/clothing/S = C.get_item_by_slot(slot_wear_suit)
+				var/obj/item/clothing/H = C.get_item_by_slot(slot_head)
+
+				if(S && H && S.flags_2 & LAVA_PROTECT_2 && H.flags_2 & LAVA_PROTECT_2)
+					return
 
 			L.adjustFireLoss(20)
 			if(L) //mobs turning into object corpses could get deleted here.
@@ -139,7 +149,7 @@
 /turf/open/lava/smooth/lava_land_surface
 	initial_gas_mix = LAVALAND_DEFAULT_ATMOS
 	planetary_atmos = TRUE
-	baseturfs = /turf/open/chasm/lavaland
+	baseturfs = /turf/open/lava/smooth/lava_land_surface
 
 /turf/open/lava/smooth/airless
 	initial_gas_mix = "TEMP=2.7"

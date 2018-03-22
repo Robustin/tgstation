@@ -57,6 +57,7 @@
 /obj/structure/destructible/cult/attackby(obj/I, mob/user, params)
 	if(istype(I, /obj/item/melee/cultblade/dagger) && iscultist(user))
 		anchored = !anchored
+		density = !density
 		to_chat(user, "<span class='notice'>You [anchored ? "":"un"]secure \the [src] [anchored ? "to":"from"] the floor.</span>")
 		if(!anchored)
 			icon_state = "[initial(icon_state)]_off"
@@ -89,13 +90,12 @@
 	if(cooldowntime > world.time)
 		to_chat(user, "<span class='cult italic'>The magic in [src] is weak, it will be ready to use again in [DisplayTimeText(cooldowntime - world.time)].</span>")
 		return
-	var/choice = alert(user,"You study the schematics etched into the altar...",,"Eldritch Whetstone","Construct Shells","Flask of Unholy Water")
+	var/choice = alert(user,"You study the schematics etched into the altar...",,"Eldritch Whetstone","Construct Shell","Flask of Unholy Water")
 	var/list/pickedtype = list()
 	switch(choice)
 		if("Eldritch Whetstone")
 			pickedtype += /obj/item/sharpener/cult
-		if("Construct Shells")
-			pickedtype += /obj/structure/constructshell
+		if("Construct Shell")
 			pickedtype += /obj/structure/constructshell
 		if("Flask of Unholy Water")
 			pickedtype += /obj/item/reagent_containers/glass/beaker/unholywater
@@ -123,9 +123,11 @@
 	if(cooldowntime > world.time)
 		to_chat(user, "<span class='cult italic'>The magic in [src] is weak, it will be ready to use again in [DisplayTimeText(cooldowntime - world.time)].</span>")
 		return
-	var/choice = alert(user,"You study the schematics etched into the forge...",,"Shielded Robe","Flagellant's Robe","Mirror Shield")
+	var/choice 
 	if(user.mind.has_antag_datum(/datum/antagonist/cult/master))
 		choice = alert(user,"You study the schematics etched into the forge...",,"Shielded Robe","Flagellant's Robe","Bastard Sword")
+	else
+		choice = alert(user,"You study the schematics etched into the forge...",,"Shielded Robe","Flagellant's Robe","Mirror Shield")
 	var/list/pickedtype = list()
 	switch(choice)
 		if("Shielded Robe")
@@ -233,7 +235,7 @@
 
 /obj/structure/destructible/cult/tome/attack_hand(mob/living/user)
 	if(!iscultist(user))
-		to_chat(user, "<span class='warning'>All of these books seem to be gibberish.</span>")
+		to_chat(user, "<span class='warning'>These books won't open and it hurts to even try and read the covers.</span>")
 		return
 	if(!anchored)
 		to_chat(user, "<span class='cultitalic'>You need to anchor [src] to the floor with your dagger first.</span>")
