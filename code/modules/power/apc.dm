@@ -94,7 +94,8 @@
 	var/last_nightshift_switch = 0
 	var/update_state = -1
 	var/update_overlay = -1
-	var/icon_update_needed = FALSE
+	var/static/run1 = 0
+	var/static/run2 = 0
 
 /obj/machinery/power/apc/unlocked
 	locked = FALSE
@@ -243,7 +244,6 @@
 						// 1 if we need to update the icon_state
 						// 2 if we need to update the overlays
 	if(!update)
-		icon_update_needed = FALSE
 		return
 
 	if(update & 1) // Updating the icon state
@@ -265,6 +265,8 @@
 			icon_state = "apc-b"
 		else if(update_state & UPSTATE_BLUESCREEN)
 			icon_state = "apcemag"
+			light_color = LIGHT_COLOR_BLUE
+			set_light(lon_range)
 		else if(update_state & UPSTATE_WIREEXP)
 			icon_state = "apcewires"
 		else if(update_state & UPSTATE_MAINT)
@@ -272,36 +274,58 @@
 
 	if(!(update_state & UPSTATE_ALLGOOD))
 		cut_overlays()
+		if(!(update_state & UPSTATE_BLUESCREEN))
+			set_light(0)
 
 	if(update & 2)
 		cut_overlays()
 		if(!(stat & (BROKEN|MAINT)) && update_state & UPSTATE_ALLGOOD)
-			var/list/O = list(
-				"apcox-[locked]",
-				"apco3-[charging]")
-			if(operating)
-				O += "apco0-[equipment]"
-				O += "apco1-[lighting]"
-				O += "apco2-[environ]"
-			add_overlay(O)
+			lock_overlay()
+			button_overlay()
+			charge_overlay()
+		to_chat(world, "A core update to overlays happened in update_icon at [loc]")
 
-	// And now, separately for cleanness, the lighting changing
-	if(update_state & UPSTATE_ALLGOOD)
+/obj/machinery/power/apc/proc/lock_overlay()
+	cut_overlay("apcox-[!locked]")
+	add_overlay("apcox-[locked]")
+
+/obj/machinery/power/apc/proc/button_overlay(last_lt, last_eq, last_en)
+	if(operating && (update_state & UPSTATE_ALLGOOD))
+		var/list/O = list()
+		var/list/N = list()
+		if(operating)
+			if(last_lt != lighting)
+				if(!isnull(last_lt))
+					O += "apco1-[last_lt]"
+				N += "apco1-[lighting]"
+			if(last_eq != equipment)
+				if(!isnull(last_eq))
+					O += "apco0-[last_eq]"
+				N += "apco0-[equipment]"
+			if(last_en != environ)
+				if(!isnull(last_en))
+					O += "apco2-[last_en]"
+				N += "apco2-[environ]"
+		cut_overlay(O)
+		add_overlay(N)
+	else
+		cut_overlays()
+/obj/machinery/power/apc/proc/charge_overlay(last_ch)
+	if(!isnull(last_ch))
+		cut_overlay("apco3-[last_ch]")
+	if(operating && (update_state & UPSTATE_ALLGOOD))
 		switch(charging)
 			if(0)
+				add_overlay("apco3-0")
 				light_color = LIGHT_COLOR_RED
 			if(1)
+				add_overlay("apco3-1")
 				light_color = LIGHT_COLOR_BLUE
 			if(2)
+				add_overlay("apco3-2")
 				light_color = LIGHT_COLOR_GREEN
 		set_light(lon_range)
-	else if(update_state & UPSTATE_BLUESCREEN)
-		light_color = LIGHT_COLOR_BLUE
-		set_light(lon_range)
-	else
-		set_light(0)
 
-	icon_update_needed = FALSE
 
 /obj/machinery/power/apc/proc/check_updates()
 	var/last_update_state = update_state
@@ -327,41 +351,8 @@
 	if(update_state <= 1)
 		update_state |= UPSTATE_ALLGOOD
 
-	if(operating)
+	if(operating && (update_state & UPSTATE_ALLGOOD))
 		update_overlay |= APC_UPOVERLAY_OPERATING
-
-	if(update_state & UPSTATE_ALLGOOD)
-		if(locked)
-			update_overlay |= APC_UPOVERLAY_LOCKED
-
-		if(!charging)
-			update_overlay |= APC_UPOVERLAY_CHARGEING0
-		else if(charging == 1)
-			update_overlay |= APC_UPOVERLAY_CHARGEING1
-		else if(charging == 2)
-			update_overlay |= APC_UPOVERLAY_CHARGEING2
-
-		if (!equipment)
-			update_overlay |= APC_UPOVERLAY_EQUIPMENT0
-		else if(equipment == 1)
-			update_overlay |= APC_UPOVERLAY_EQUIPMENT1
-		else if(equipment == 2)
-			update_overlay |= APC_UPOVERLAY_EQUIPMENT2
-
-		if(!lighting)
-			update_overlay |= APC_UPOVERLAY_LIGHTING0
-		else if(lighting == 1)
-			update_overlay |= APC_UPOVERLAY_LIGHTING1
-		else if(lighting == 2)
-			update_overlay |= APC_UPOVERLAY_LIGHTING2
-
-		if(!environ)
-			update_overlay |= APC_UPOVERLAY_ENVIRON0
-		else if(environ==1)
-			update_overlay |= APC_UPOVERLAY_ENVIRON1
-		else if(environ==2)
-			update_overlay |= APC_UPOVERLAY_ENVIRON2
-
 
 	var/results = 0
 	if(last_update_state == update_state && last_update_overlay == update_overlay)
@@ -371,10 +362,6 @@
 	if(last_update_overlay != update_overlay)
 		results += 2
 	return results
-
-// Used in process so it doesn't update the icon too much
-/obj/machinery/power/apc/proc/queue_icon_update()
-	icon_update_needed = TRUE
 
 //attack with an item - open/close cover, insert cell, or (un)lock interface
 
@@ -679,7 +666,7 @@
 		if(allowed(usr) && !wires.is_cut(WIRE_IDSCAN) && !malfhack)
 			locked = !locked
 			to_chat(user, "<span class='notice'>You [ locked ? "lock" : "unlock"] the APC interface.</span>")
-			update_icon()
+			lock_overlay()
 		else
 			to_chat(user, "<span class='warning'>Access denied.</span>")
 
@@ -857,7 +844,7 @@
 					to_chat(usr, "The APC does not respond to the command.")
 				else
 					locked = !locked
-					update_icon()
+					lock_overlay()
 					. = TRUE
 		if("cover")
 			coverlocked = !coverlocked
@@ -875,21 +862,25 @@
 		if("charge")
 			chargemode = !chargemode
 			if(!chargemode)
+				var/last_ch = charging
 				charging = 0
-				update_icon()
+				charge_overlay(last_ch)
 			. = TRUE
 		if("channel")
 			if(params["eqp"])
+				var/last_eq = equipment
 				equipment = setsubsystem(text2num(params["eqp"]))
-				update_icon()
+				button_overlay(lighting, last_eq, environ)
 				update()
 			else if(params["lgt"])
+				var/last_lt = lighting
 				lighting = setsubsystem(text2num(params["lgt"]))
-				update_icon()
+				button_overlay(last_lt, equipment, environ)
 				update()
 			else if(params["env"])
+				var/last_en = environ
 				environ = setsubsystem(text2num(params["env"]))
-				update_icon()
+				button_overlay(lighting, equipment, last_en)
 				update()
 			. = TRUE
 		if("overload")
@@ -1060,15 +1051,12 @@
 		return 0
 
 /obj/machinery/power/apc/process()
-	if(icon_update_needed)
-		update_icon()
 	if(stat & (BROKEN|MAINT))
 		return
 	if(!area.requires_power)
 		return
 	if(failure_timer)
 		update()
-		queue_icon_update()
 		failure_timer--
 		force_update = 1
 		return
@@ -1201,10 +1189,11 @@
 
 	if(last_lt != lighting || last_eq != equipment || last_en != environ || force_update)
 		force_update = 0
-		queue_icon_update()
+		button_overlay(last_lt, last_eq, last_en)
 		update()
-	else if (last_ch != charging)
-		queue_icon_update()
+	if (last_ch != charging || force_update)
+		charge_overlay(last_ch)
+
 
 // val 0=off, 1=off(auto) 2=on 3=on(auto)
 // on 0=off, 1=on, 2=autooff
@@ -1227,6 +1216,7 @@
 	switch(wire)
 		if(WIRE_IDSCAN)
 			locked = TRUE
+			lock_overlay()
 		if(WIRE_POWER1, WIRE_POWER2)
 			if(!wires.is_cut(WIRE_POWER1) && !wires.is_cut(WIRE_POWER2))
 				shorted = FALSE
