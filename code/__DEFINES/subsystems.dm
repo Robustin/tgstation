@@ -128,14 +128,17 @@
 		var/list/po = A.priority_overlays;\
 		if(LAZYLEN(po)){\
 			if(LAZYLEN(oo)){\
-				A.overlays = oo + po;\
+				A.overlays += (oo + po - A.overlays);\
+				A.overlays -= (A.overlays - oo - po);\
 			}\
 			else{\
-				A.overlays = po;\
+				A.overlays += (po - A.overlays);\
+				A.overlays -= (A.overlays - po);\
 			}\
 		}\
 		else if(LAZYLEN(oo)){\
-			A.overlays = oo;\
+			A.overlays += (oo - A.overlays);\
+			A.overlays -= (A.overlays - oo);\
 		}\
 		else{\
 			A.overlays.Cut();\
