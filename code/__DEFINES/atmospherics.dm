@@ -10,6 +10,25 @@
 #define META_GAS_DANGER			5
 #define META_GAS_ID				6
 
+//BITMOS
+#define DEF/datum/gas/oxygen 1
+#define DEFnitrogen 2
+#define DEFcarbon_dioxide 4
+#define DEFstimulum 8
+#define DEFbz 16
+#define DEFpluoxium 32
+#define DEFnitryl 64
+#define DEnitrous_oxide 128
+#define DEFtritium 256
+#define DEFwater_vapor 512
+#define DEFplasma 1024
+#define DEFhypernoblium 2048
+
+#define REACT_MIN 128
+#define OVERLAY_MIN 64
+
+
+
 //ATMOS
 //stuff you should probably leave well alone!
 #define R_IDEAL_GAS_EQUATION	8.31	//kPa*L/(K*mol)
@@ -211,7 +230,7 @@
 #define ADD_GAS(gas_id, out_list)\
 	var/list/tmp_gaslist = GLOB.gaslist_cache[gas_id]; out_list[gas_id] = tmp_gaslist.Copy();
 
-#define ASSERT_GAS(gas_id, gas_mixture) if (!gas_mixture.gases[gas_id]) { ADD_GAS(gas_id, gas_mixture.gases) };
+#define ASSERT_GAS(gas_id, gas_mixture) if (!gas_mixture.gases[gas_id]) { ADD_GAS(gas_id, gas_mixture.gases); gas_mixture.gascomp += GLOB.meta_gas_info[gas_id][id] };
 
 GLOBAL_LIST_INIT(pipe_paint_colors, list(
 		"Amethyst" = rgb(130,43,255), //supplymain

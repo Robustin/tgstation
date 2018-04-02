@@ -27,7 +27,10 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 	var/tmp/temperature_archived = 0
 	var/volume = CELL_VOLUME //liters
 	var/last_share = 0
+	var/gascomp = 0
 	var/list/reaction_results
+	var/static/d1 = 0
+	var/static/d2 = 0
 
 /datum/gas_mixture/New(volume)
 	gases = new
@@ -68,7 +71,7 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 /datum/gas_mixture/proc/garbage_collect(list/tocheck)
 	var/list/cached_gases = gases
 	for(var/id in (tocheck || cached_gases))
-		if(cached_gases[id][MOLES] <= 0 && cached_gases[id][ARCHIVE] <= 0)
+		if(cached_gases[id][MOLES] <= 0 && cached_gases[id][n] <= 0)
 			cached_gases -= id
 
 	//PV = nRT
@@ -307,8 +310,12 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 	var/abs_moved_moles = 0
 
 	//GAS TRANSFER
-	for(var/id in sharer_gases - cached_gases) // create gases not in our cache
-		ADD_GAS(id, gases)
+	if(cached_gases.gascomp != sharer.gascomp)
+		d1++
+		for(var/id in sharer_gases - cached_gases) // create gases not in our cache
+			ADD_GAS(id, gases)
+	else
+		d2++
 	for(var/id in cached_gases) // transfer gases
 		ASSERT_GAS(id, sharer)
 

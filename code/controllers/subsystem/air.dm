@@ -233,7 +233,8 @@ SUBSYSTEM_DEF(air)
 	#ifdef VISUALIZE_ACTIVE_TURFS
 	T.remove_atom_colour(TEMPORARY_COLOUR_PRIORITY, "#00ff00")
 	#endif
-	T.excited = 0
+	if(istype(T))
+		T.excited = 0
 
 /datum/controller/subsystem/air/proc/add_to_active(turf/open/T)
 	if(istype(T) && T.air)
