@@ -223,21 +223,7 @@ SUBSYSTEM_DEF(air)
 			return
 
 /datum/controller/subsystem/air/proc/process_excited_groups(resumed = 0)
-	if (!resumed)
-		src.currentrun = excited_groups.Copy()
-	//cache for sanic speed (lists are references anyways)
-	var/list/currentrun = src.currentrun
-	while(currentrun.len)
-		var/datum/excited_group/EG = currentrun[currentrun.len]
-		currentrun.len--
-		EG.breakdown_cooldown++
-		EG.dismantle_cooldown++
-		if(EG.breakdown_cooldown >= EXCITED_GROUP_BREAKDOWN_CYCLES)
-			EG.self_breakdown()
-		else if(EG.dismantle_cooldown >= EXCITED_GROUP_DISMANTLE_CYCLES)
-			EG.dismantle()
-		if (MC_TICK_CHECK)
-			return
+	return
 
 
 /datum/controller/subsystem/air/proc/remove_from_active(turf/open/T)
@@ -247,12 +233,9 @@ SUBSYSTEM_DEF(air)
 	#ifdef VISUALIZE_ACTIVE_TURFS
 	T.remove_atom_colour(TEMPORARY_COLOUR_PRIORITY, "#00ff00")
 	#endif
-	if(istype(T))
-		T.excited = 0
-		if(T.excited_group)
-			T.excited_group.garbage_collect()
+	T.excited = 0
 
-/datum/controller/subsystem/air/proc/add_to_active(turf/open/T, blockchanges = 1)
+/datum/controller/subsystem/air/proc/add_to_active(turf/open/T)
 	if(istype(T) && T.air)
 		#ifdef VISUALIZE_ACTIVE_TURFS
 		T.add_atom_colour("#00ff00", TEMPORARY_COLOUR_PRIORITY)
@@ -261,8 +244,6 @@ SUBSYSTEM_DEF(air)
 		active_turfs |= T
 		if(currentpart == SSAIR_ACTIVETURFS)
 			currentrun |= T
-		if(blockchanges && T.excited_group)
-			T.excited_group.garbage_collect()
 	else if(T.initialized)
 		for(var/turf/S in T.atmos_adjacent_turfs)
 			add_to_active(S)
@@ -317,11 +298,6 @@ SUBSYSTEM_DEF(air)
 
 		while (turfs_to_check.len)
 		var/ending_ats = active_turfs.len
-		for(var/thing in excited_groups)
-			var/datum/excited_group/EG = thing
-			EG.self_breakdown(space_is_all_consuming = 1)
-			EG.dismantle()
-			CHECK_TICK
 
 		var/msg = "HEY! LISTEN! [DisplayTimeText(world.timeofday - timer)] were wasted processing [starting_ats] turf(s) (connected to [ending_ats] other turfs) with atmos differences at round start."
 		to_chat(world, "<span class='boldannounce'>[msg]</span>")
@@ -329,27 +305,13 @@ SUBSYSTEM_DEF(air)
 
 /turf/open/proc/resolve_active_graph()
 	. = list()
-	var/datum/excited_group/EG = excited_group
 	if (blocks_air || !air)
 		return
-	if (!EG)
-		EG = new
-		EG.add_turf(src)
 
 	for (var/turf/open/ET in atmos_adjacent_turfs)
 		if ( ET.blocks_air || !ET.air)
 			continue
 
-		var/ET_EG = ET.excited_group
-		if (ET_EG)
-			if (ET_EG != EG)
-				EG.merge_groups(ET_EG)
-				EG = excited_group //merge_groups() may decide to replace our current EG
-		else
-			EG.add_turf(ET)
-		if (!ET.excited)
-			ET.excited = 1
-			. += ET
 /turf/open/space/resolve_active_graph()
 	return list()
 
