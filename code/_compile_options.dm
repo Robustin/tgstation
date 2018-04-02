@@ -11,9 +11,9 @@
 
 //#define FIND_REF_NO_CHECK_TICK	//Sets world.loop_checks to false and prevents find references from sleeping
 
-
-//#define VISUALIZE_ACTIVE_TURFS	//Highlights atmos active turfs in green
 #endif
+#define VISUALIZE_ACTIVE_TURFS	//Highlights atmos active turfs in green
+
 
 //#define UNIT_TESTS			//Enables unit tests via TEST_RUN_PARAMETER
 
