@@ -310,7 +310,7 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 	var/moved_moles = 0
 	var/abs_moved_moles = 0
 
-	/*GAS TRANSFER
+	//GAS TRANSFER
 	if(prob(50))
 		var/dinit = d1
 		STAT_START_STOPWATCH
@@ -320,13 +320,16 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 				ADD_GAS(id, gases)
 		STAT_STOP_STOPWATCH
 		STAT_LOG_ENTRY(SSoverlays.stats, "BITFIELD")
-		d2 += (d1 - dinit)
-	else*/
-	var/dinit = d1
-	for(var/id in sharer_gases - cached_gases) // create gases not in our cache
-		d1++
-		ADD_GAS(id, gases)
-	d2 += (d1 - dinit)
+		d2++
+	else
+		var/dinit = d1
+		STAT_START_STOPWATCH
+		for(var/id in sharer_gases - cached_gases) // create gases not in our cache
+			d1++
+			ADD_GAS(id, gases)
+		STAT_STOP_STOPWATCH
+		STAT_LOG_ENTRY(SSoverlays.stats, "OLDFIELD")
+		d2++
 	for(var/id in cached_gases) // transfer gases
 		ASSERT_GAS(id, sharer)
 

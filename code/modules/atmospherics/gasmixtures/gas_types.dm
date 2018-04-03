@@ -3,7 +3,7 @@ GLOBAL_LIST_INIT(hardcoded_gases, list(/datum/gas/oxygen, /datum/gas/nitrogen, /
 /proc/meta_gas_list()
 	. = subtypesof(/datum/gas)
 	for(var/gas_path in .)
-		var/list/gas_info = new(6)
+		var/list/gas_info = new(7)
 		var/datum/gas/gas = gas_path
 
 		gas_info[META_GAS_SPECIFIC_HEAT] = initial(gas.specific_heat)
@@ -13,6 +13,7 @@ GLOBAL_LIST_INIT(hardcoded_gases, list(/datum/gas/oxygen, /datum/gas/nitrogen, /
 			gas_info[META_GAS_OVERLAY] = new /obj/effect/overlay/gas(initial(gas.gas_overlay))
 		gas_info[META_GAS_DANGER] = initial(gas.dangerous)
 		gas_info[META_GAS_ID] = initial(gas.id)
+		gas_info[META_GAS_FLAG] = initial(gas.flag)
 		.[gas_path] = gas_info
 
 /proc/gas_id2path(id)
@@ -42,7 +43,7 @@ GLOBAL_LIST_INIT(hardcoded_gases, list(/datum/gas/oxygen, /datum/gas/nitrogen, /
 \*||||||||||||||||||||||||||||||||||||||||*/
 
 /datum/gas
-	var/id = 0
+	var/id = ""
 	var/specific_heat = 0
 	var/name = ""
 	var/gas_overlay = "" //icon_state in icons/effects/tile_effects.dmi
@@ -51,44 +52,44 @@ GLOBAL_LIST_INIT(hardcoded_gases, list(/datum/gas/oxygen, /datum/gas/nitrogen, /
 	var/flag = 0 //bitflags for faster comparisons, ordered to provide thresholds for reactions and overlays
 
 /datum/gas/oxygen
-	id = 1
+	id = "o2"
 	specific_heat = 20
 	name = "Oxygen"
 	flag = 1
 
 /datum/gas/nitrogen
-	id = 2
+	id = "n2"
 	specific_heat = 20
 	name = "Nitrogen"
 	flag = 2
 
 /datum/gas/carbon_dioxide //what the fuck is this?
-	id = 4
+	id = "co2"
 	specific_heat = 30
 	name = "Carbon Dioxide"
 	flag = 4
 
 /datum/gas/stimulum
-	id = 8
+	id = "stim"
 	specific_heat = 5
 	name = "Stimulum"
 	flag = 8
 
 /datum/gas/bz
-	id = 16
+	id = "bz"
 	specific_heat = 20
 	name = "BZ"
 	dangerous = TRUE
 	flag = 16
 
 /datum/gas/pluoxium
-	id = 32
+	id = "pluox"
 	specific_heat = 80
 	name = "Pluoxium"
 	flag = 32
 
 /datum/gas/nitryl
-	id = 64
+	id = "no2"
 	specific_heat = 20
 	name = "Nitryl"
 	gas_overlay = "nitryl"
@@ -97,7 +98,7 @@ GLOBAL_LIST_INIT(hardcoded_gases, list(/datum/gas/oxygen, /datum/gas/nitrogen, /
 	flag = 64
 
 /datum/gas/nitrous_oxide
-	id = 128
+	id = "n2o"
 	specific_heat = 40
 	name = "Nitrous Oxide"
 	gas_overlay = "nitrous_oxide"
@@ -106,7 +107,7 @@ GLOBAL_LIST_INIT(hardcoded_gases, list(/datum/gas/oxygen, /datum/gas/nitrogen, /
 	flag = 128
 
 /datum/gas/tritium
-	id = 256
+	id = "tritium"
 	specific_heat = 10
 	name = "Tritium"
 	gas_overlay = "tritium"
@@ -115,7 +116,7 @@ GLOBAL_LIST_INIT(hardcoded_gases, list(/datum/gas/oxygen, /datum/gas/nitrogen, /
 	flag = 256
 
 /datum/gas/water_vapor
-	id = 512
+	id = "water vapor"
 	specific_heat = 40
 	name = "Water Vapor"
 	gas_overlay = "water_vapor"
@@ -123,7 +124,7 @@ GLOBAL_LIST_INIT(hardcoded_gases, list(/datum/gas/oxygen, /datum/gas/nitrogen, /
 	flag = 512
 
 /datum/gas/plasma
-	id = 1024
+	id = "plasma"
 	specific_heat = 200
 	name = "Plasma"
 	gas_overlay = "plasma"
@@ -132,7 +133,7 @@ GLOBAL_LIST_INIT(hardcoded_gases, list(/datum/gas/oxygen, /datum/gas/nitrogen, /
 	flag = 1024
 
 /datum/gas/hypernoblium
-	id = 2048
+	id = "nob"
 	specific_heat = 2000
 	name = "Hyper-noblium"
 	gas_overlay = "freon"
