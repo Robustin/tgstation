@@ -141,9 +141,6 @@
 			if(gas_overlay && gas[MOLES] > gas_meta[META_GAS_MOLES_VISIBLE])
 				. += gas_overlay
 
-
-/proc/perfor_test
-
 /////////////////////////////SIMULATION///////////////////////////////////
 
 #define DONEZO \

@@ -11,18 +11,19 @@
 #define META_GAS_ID				6
 
 //BITMOS
-#define DEF/datum/gas/oxygen 1
-#define DEFnitrogen 2
-#define DEFcarbon_dioxide 4
-#define DEFstimulum 8
-#define DEFbz 16
-#define DEFpluoxium 32
-#define DEFnitryl 64
-#define DEnitrous_oxide 128
-#define DEFtritium 256
-#define DEFwater_vapor 512
-#define DEFplasma 1024
-#define DEFhypernoblium 2048
+#define NO_GAS 0
+#define OXYGEN_GAS 1
+#define NITROGEN_GAS 2
+#define CARBONDIOXIDE_GAS 4
+#define STIMULUM_GAS 8
+#define BZ_GAS 16
+#define PLUOXIUM_GAS 32
+#define NITRYL_GAS 64
+#define NITROUSOXIDE_GAS 128
+#define TRITIUM_GAS 256
+#define WATERVAPOR_GAS 512
+#define PLASMA_GAS 1024
+#define HYPERNOBILIUM_GAS 2048
 
 #define REACT_MIN 128
 #define OVERLAY_MIN 64
@@ -230,7 +231,7 @@
 #define ADD_GAS(gas_id, out_list)\
 	var/list/tmp_gaslist = GLOB.gaslist_cache[gas_id]; out_list[gas_id] = tmp_gaslist.Copy();
 
-#define ASSERT_GAS(gas_id, gas_mixture) if (!gas_mixture.gases[gas_id]) { ADD_GAS(gas_id, gas_mixture.gases); gas_mixture.gascomp += GLOB.meta_gas_info[gas_id][id] };
+#define ASSERT_GAS(gas_id, gas_mixture) if (!gas_mixture.gases[gas_id]) { ADD_GAS(gas_id, gas_mixture.gases); gas_mixture.gascomp += GLOB.meta_gas_info[gas_id].id };
 
 GLOBAL_LIST_INIT(pipe_paint_colors, list(
 		"Amethyst" = rgb(130,43,255), //supplymain

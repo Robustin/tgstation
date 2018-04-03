@@ -27,7 +27,7 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 	var/tmp/temperature_archived = 0
 	var/volume = CELL_VOLUME //liters
 	var/last_share = 0
-	var/gascomp = 0
+	var/gascomp = NO_GAS
 	var/list/reaction_results
 	var/static/d1 = 0
 	var/static/d2 = 0
@@ -69,9 +69,10 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 		//if assert_gas() was called only to read from the gas.
 	//By removing empty gases, processing speed is increased.
 /datum/gas_mixture/proc/garbage_collect(list/tocheck)
-	var/list/cached_gases = gases
-	for(var/id in (tocheck || cached_gases))
-		if(cached_gases[id][MOLES] <= 0 && cached_gases[id][n] <= 0)
+	var/list/cached_gases = tocheck || gases
+	for(var/id in cached_gases)
+		var/current_gas = cached_gases[id]
+		if(QUANTIZE(current_gas[MOLES]) <= 0 && QUANTIZE(current_gas[ARCHIVE]) <= 0)
 			cached_gases -= id
 
 	//PV = nRT
@@ -309,13 +310,23 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 	var/moved_moles = 0
 	var/abs_moved_moles = 0
 
-	//GAS TRANSFER
-	if(cached_gases.gascomp != sharer.gascomp)
+	/*GAS TRANSFER
+	if(prob(50))
+		var/dinit = d1
+		STAT_START_STOPWATCH
+		if(gascomp ^ sharer.gascomp)
+			for(var/id in sharer_gases - cached_gases) // create gases not in our cache
+				d1++
+				ADD_GAS(id, gases)
+		STAT_STOP_STOPWATCH
+		STAT_LOG_ENTRY(SSoverlays.stats, "BITFIELD")
+		d2 += (d1 - dinit)
+	else*/
+	var/dinit = d1
+	for(var/id in sharer_gases - cached_gases) // create gases not in our cache
 		d1++
-		for(var/id in sharer_gases - cached_gases) // create gases not in our cache
-			ADD_GAS(id, gases)
-	else
-		d2++
+		ADD_GAS(id, gases)
+	d2 += (d1 - dinit)
 	for(var/id in cached_gases) // transfer gases
 		ASSERT_GAS(id, sharer)
 
