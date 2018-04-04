@@ -4,7 +4,7 @@ What are the archived variables for?
 	This prevents race conditions that arise based on the order of tile processing.
 */
 #define MINIMUM_HEAT_CAPACITY	0.0003
-#define QUANTIZE(variable)		(round(variable,0.0000001))/*I feel the need to document what happens here. Basically this is used to catch most rounding errors, however it's previous value made it so that
+#define QUANTIZE(variable)		(round(variable,0.0001))/*I feel the need to document what happens here. Basically this is used to catch most rounding errors, however it's previous value made it so that
 															once gases got hot enough, most procedures wouldnt occur due to the fact that the mole counts would get rounded away. Thus, we lowered it a few orders of magnititude */
 GLOBAL_LIST_INIT(meta_gas_info, meta_gas_list()) //see ATMOSPHERICS/gas_types.dm
 GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
@@ -73,6 +73,7 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 	for(var/id in cached_gases)
 		var/current_gas = cached_gases[id]
 		if(QUANTIZE(current_gas[MOLES]) <= 0 && QUANTIZE(current_gas[ARCHIVE]) <= 0)
+			gascomp -= current_gas[GAS_META][META_GAS_FLAG]
 			cached_gases -= id
 
 	//PV = nRT
@@ -195,7 +196,6 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 	for(var/giver_id in giver_gases)
 		ASSERT_GAS(giver_id, src)
 		cached_gases[giver_id][MOLES] += giver_gases[giver_id][MOLES]
-
 	return 1
 
 /datum/gas_mixture/remove(amount)
@@ -245,7 +245,7 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 	for(var/id in cached_gases)
 		ADD_GAS(id, copy.gases)
 		copy_gases[id][MOLES] = cached_gases[id][MOLES]
-
+		copy.gascomp = gascomp
 	return copy
 
 
@@ -257,7 +257,7 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 	for(var/id in sample_gases)
 		ASSERT_GAS(id,src)
 		cached_gases[id][MOLES] = sample_gases[id][MOLES]
-
+		gascomp = sample.gascomp
 	//remove all gases not in the sample
 	cached_gases &= sample_gases
 
@@ -284,9 +284,16 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 		var/path = id
 		if(!ispath(path))
 			path = gas_id2path(path) //a lot of these strings can't have embedded expressions (especially for mappers), so support for IDs needs to stick around
-		ADD_GAS(path, gases)
+		ASSERT_GAS(path, src)
 		gases[path][MOLES] = text2num(gas[id])
 	return 1
+
+/proc/gastest(var/num)
+	to_chat(world, "The gas is [GLOB.gaslist_cache[log(2, num)+1]].")
+
+/proc/mathtest(var/num)
+	var/output = log(2, num)
+	to_chat(world, "The number is [output].")
 
 /datum/gas_mixture/share(datum/gas_mixture/sharer, atmos_adjacent_turfs = 4)
 	if(!sharer)
@@ -311,45 +318,69 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 	var/abs_moved_moles = 0
 
 	//GAS TRANSFER
-	if(prob(50))
-		var/dinit = d1
+	if(prob(100))
 		STAT_START_STOPWATCH
-		if(gascomp ^ sharer.gascomp)
-			for(var/id in sharer_gases - cached_gases) // create gases not in our cache
-				d1++
-				ADD_GAS(id, gases)
+		var/us = gascomp
+		var/them = sharer.gascomp
+		var/g = us ^ them
+		if(g)
+			var/i = 2048
+			while(i)
+				if(i <= g)
+					var/gas = gas_flag2path(i)
+					if(us > them)
+						ADD_GAS(gas, sharer_gases)
+						sharer.gascomp |= i
+						us -= i
+					else
+						ADD_GAS(gas, cached_gases)
+						gascomp |= i
+						them -= i
+					g -= i
+				i >>= 1
+		for(var/id in cached_gases) // transfer gases
+			var/gas = cached_gases[id]
+			var/sharergas = sharer_gases[id]
+			var/delta = QUANTIZE(gas[ARCHIVE] - sharergas[ARCHIVE])/(atmos_adjacent_turfs+1) //the amount of gas that gets moved between the mixtures
+
+			if(delta && abs_temperature_delta > MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER)
+				var/gas_heat_capacity = delta * gas[GAS_META][META_GAS_SPECIFIC_HEAT]
+				if(delta > 0)
+					heat_capacity_self_to_sharer += gas_heat_capacity
+				else
+					heat_capacity_sharer_to_self -= gas_heat_capacity //subtract here instead of adding the absolute value because we know that delta is negative. saves a proc call.
+
+			gas[MOLES]			-= delta
+			sharergas[MOLES]	+= delta
+			moved_moles			+= delta
+			abs_moved_moles		+= abs(delta)
 		STAT_STOP_STOPWATCH
 		STAT_LOG_ENTRY(SSoverlays.stats, "BITFIELD")
-		d2++
 	else
-		var/dinit = d1
 		STAT_START_STOPWATCH
 		for(var/id in sharer_gases - cached_gases) // create gases not in our cache
-			d1++
-			ADD_GAS(id, gases)
+			ADD_GAS(id, cached_gases)
+		for(var/id in cached_gases) // transfer gases
+			ASSERT_GAS(id, sharer)
+
+			var/gas = cached_gases[id]
+			var/sharergas = sharer_gases[id]
+
+			var/delta = QUANTIZE(gas[ARCHIVE] - sharergas[ARCHIVE])/(atmos_adjacent_turfs+1) //the amount of gas that gets moved between the mixtures
+
+			if(delta && abs_temperature_delta > MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER)
+				var/gas_heat_capacity = delta * gas[GAS_META][META_GAS_SPECIFIC_HEAT]
+				if(delta > 0)
+					heat_capacity_self_to_sharer += gas_heat_capacity
+				else
+					heat_capacity_sharer_to_self -= gas_heat_capacity //subtract here instead of adding the absolute value because we know that delta is negative. saves a proc call.
+
+			gas[MOLES]			-= delta
+			sharergas[MOLES]	+= delta
+			moved_moles			+= delta
+			abs_moved_moles		+= abs(delta)
 		STAT_STOP_STOPWATCH
 		STAT_LOG_ENTRY(SSoverlays.stats, "OLDFIELD")
-		d2++
-	for(var/id in cached_gases) // transfer gases
-		ASSERT_GAS(id, sharer)
-
-		var/gas = cached_gases[id]
-		var/sharergas = sharer_gases[id]
-
-		var/delta = QUANTIZE(gas[ARCHIVE] - sharergas[ARCHIVE])/(atmos_adjacent_turfs+1) //the amount of gas that gets moved between the mixtures
-
-		if(delta && abs_temperature_delta > MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER)
-			var/gas_heat_capacity = delta * gas[GAS_META][META_GAS_SPECIFIC_HEAT]
-			if(delta > 0)
-				heat_capacity_self_to_sharer += gas_heat_capacity
-			else
-				heat_capacity_sharer_to_self -= gas_heat_capacity //subtract here instead of adding the absolute value because we know that delta is negative. saves a proc call.
-
-		gas[MOLES]			-= delta
-		sharergas[MOLES]	+= delta
-		moved_moles			+= delta
-		abs_moved_moles		+= abs(delta)
-
 	last_share = abs_moved_moles
 
 	//THERMAL ENERGY TRANSFER
