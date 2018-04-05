@@ -133,13 +133,14 @@
 /turf/open/proc/tile_graphic()
 	. = new /list
 	if(air)
-		var/list/gases = air.gases
-		for(var/id in gases)
-			var/gas = gases[id]
-			var/gas_meta = gas[GAS_META]
-			var/gas_overlay = gas_meta[META_GAS_OVERLAY]
-			if(gas_overlay && gas[MOLES] > gas_meta[META_GAS_MOLES_VISIBLE])
-				. += gas_overlay
+		if(air.gascomp >= 128)
+			var/list/gases = air.gases
+			for(var/id in gases)
+				var/gas = gases[id]
+				var/gas_meta = gas[GAS_META]
+				var/gas_overlay = gas_meta[META_GAS_OVERLAY]
+				if(gas_overlay && gas[MOLES] > gas_meta[META_GAS_MOLES_VISIBLE])
+					. += gas_overlay
 
 /////////////////////////////SIMULATION///////////////////////////////////
 
