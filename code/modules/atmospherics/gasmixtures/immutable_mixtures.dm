@@ -11,6 +11,7 @@
 /datum/gas_mixture/immutable/garbage_collect()
 	temperature = initial_temperature
 	temperature_archived = initial_temperature
+	gascomp = 0
 	gases.Cut()
 
 /datum/gas_mixture/immutable/archive()

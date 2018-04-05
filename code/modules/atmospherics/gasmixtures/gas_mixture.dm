@@ -298,7 +298,6 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 /datum/gas_mixture/share(datum/gas_mixture/sharer, atmos_adjacent_turfs = 4)
 	if(!sharer)
 		return 0
-
 	var/list/cached_gases = gases
 	var/list/sharer_gases = sharer.gases
 
@@ -316,73 +315,47 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 
 	var/moved_moles = 0
 	var/abs_moved_moles = 0
-
 	//GAS TRANSFER
-	if(prob(100))
-		STAT_START_STOPWATCH
-		var/us = gascomp
-		var/them = sharer.gascomp
-		var/g = us ^ them
-		if(g)
-			var/i = 2048
-			while(i)
-				if(i <= g)
-					var/gas = gas_flag2path(i)
-					if(us > them)
-						ADD_GAS(gas, sharer_gases)
-						sharer.gascomp |= i
-						us -= i
-					else
-						ADD_GAS(gas, cached_gases)
-						gascomp |= i
-						them -= i
-					g -= i
-				i >>= 1
-		for(var/id in cached_gases) // transfer gases
-			var/gas = cached_gases[id]
-			var/sharergas = sharer_gases[id]
-			var/delta = QUANTIZE(gas[ARCHIVE] - sharergas[ARCHIVE])/(atmos_adjacent_turfs+1) //the amount of gas that gets moved between the mixtures
-
-			if(delta && abs_temperature_delta > MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER)
-				var/gas_heat_capacity = delta * gas[GAS_META][META_GAS_SPECIFIC_HEAT]
-				if(delta > 0)
-					heat_capacity_self_to_sharer += gas_heat_capacity
+	STAT_START_STOPWATCH
+	var/us = gascomp
+	var/them = sharer.gascomp
+	var/g = us ^ them
+	if(g)
+		var/i = 2048
+		while(i)
+			if(i <= g)
+				var/gas = gas_flag2path(i)
+				if(us > them)
+					ADD_GAS(gas, sharer_gases)
+					sharer.gascomp |= i
+					us -= i
 				else
-					heat_capacity_sharer_to_self -= gas_heat_capacity //subtract here instead of adding the absolute value because we know that delta is negative. saves a proc call.
+					ADD_GAS(gas, cached_gases)
+					gascomp |= i
+					them -= i
+				g -= i
+			i >>= 1
+	for(var/id in cached_gases) // transfer gases
+		var/gas = cached_gases[id]
+		var/sharergas = sharer_gases[id]
+		var/delta = QUANTIZE(gas[ARCHIVE] - sharergas[ARCHIVE])/(atmos_adjacent_turfs+1) //the amount of gas that gets moved between the mixtures
 
-			gas[MOLES]			-= delta
-			sharergas[MOLES]	+= delta
-			moved_moles			+= delta
-			abs_moved_moles		+= abs(delta)
-		STAT_STOP_STOPWATCH
-		STAT_LOG_ENTRY(SSoverlays.stats, "BITFIELD")
-	else
-		STAT_START_STOPWATCH
-		for(var/id in sharer_gases - cached_gases) // create gases not in our cache
-			ADD_GAS(id, cached_gases)
-		for(var/id in cached_gases) // transfer gases
-			ASSERT_GAS(id, sharer)
+		if(delta && abs_temperature_delta > MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER)
+			var/gas_heat_capacity = delta * gas[GAS_META][META_GAS_SPECIFIC_HEAT]
+			if(delta > 0)
+				heat_capacity_self_to_sharer += gas_heat_capacity
+			else
+				heat_capacity_sharer_to_self -= gas_heat_capacity //subtract here instead of adding the absolute value because we know that delta is negative. saves a proc call.
 
-			var/gas = cached_gases[id]
-			var/sharergas = sharer_gases[id]
+		gas[MOLES]			-= delta
+		sharergas[MOLES]	+= delta
+		moved_moles			+= delta
+		abs_moved_moles		+= abs(delta)
+	STAT_STOP_STOPWATCH
+	STAT_LOG_ENTRY(SSoverlays.stats, "BITFIELD")
 
-			var/delta = QUANTIZE(gas[ARCHIVE] - sharergas[ARCHIVE])/(atmos_adjacent_turfs+1) //the amount of gas that gets moved between the mixtures
-
-			if(delta && abs_temperature_delta > MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER)
-				var/gas_heat_capacity = delta * gas[GAS_META][META_GAS_SPECIFIC_HEAT]
-				if(delta > 0)
-					heat_capacity_self_to_sharer += gas_heat_capacity
-				else
-					heat_capacity_sharer_to_self -= gas_heat_capacity //subtract here instead of adding the absolute value because we know that delta is negative. saves a proc call.
-
-			gas[MOLES]			-= delta
-			sharergas[MOLES]	+= delta
-			moved_moles			+= delta
-			abs_moved_moles		+= abs(delta)
-		STAT_STOP_STOPWATCH
-		STAT_LOG_ENTRY(SSoverlays.stats, "OLDFIELD")
 	last_share = abs_moved_moles
-
+	//STAT_START_STOPWATCH
 	//THERMAL ENERGY TRANSFER
 	if(abs_temperature_delta > MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER)
 		var/new_self_heat_capacity = old_self_heat_capacity + heat_capacity_sharer_to_self - heat_capacity_self_to_sharer
@@ -411,7 +384,11 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 		var/their_moles
 		TOTAL_MOLES(sharer_gases,their_moles)
 		var/delta_pressure = temperature_archived*(our_moles + moved_moles) - sharer.temperature_archived*(their_moles - moved_moles)
+		//STAT_STOP_STOPWATCH
+		//STAT_LOG_ENTRY(SSoverlays.stats, "HEATFIELD")
 		return delta_pressure * R_IDEAL_GAS_EQUATION / volume
+	//STAT_STOP_STOPWATCH
+	//STAT_LOG_ENTRY(SSoverlays.stats, "HEATFIELD")
 
 /datum/gas_mixture/after_share(datum/gas_mixture/sharer, atmos_adjacent_turfs = 4)
 	return
