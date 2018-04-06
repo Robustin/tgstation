@@ -26,10 +26,12 @@
 
 /datum/pipeline/process()
 	if(update)
+		var/datum/gas_mixture/our_air = air
 		if(reconcile)
-			update = reconcile_air()
+			reconcile_air()
 		else
-			update = air.update_pipeair(other_airs)
+			our_air.update_pipeair(other_airs)
+		update = our_air.react()
 
 /datum/pipeline/proc/build_pipeline(obj/machinery/atmospherics/base)
 	var/volume = 0
@@ -230,7 +232,7 @@
 			if(C.connected_device)
 				GL += C.portableConnectorReturnAir()
 	reconcile = FALSE
-	return air.update_pipeair(GL)
+	air.update_pipeair(GL)
 
 /datum/gas_mixture/proc/update_pipeair(list/other_airs)
 	var/total_volume = volume
@@ -240,8 +242,7 @@
 		if(G.gases.len) //Average 0.6-0.8 false results for every proc call
 			merge(G)
 	var/list/cached_gases = gases
-	. = NO_REACTION
-	if(cached_gases.len) //Average 0.15 false results for every proc call
+	if(gascomp) //Average 0.15 false results for every proc call
 		for(var/i in other_airs)	//Update individual gas_mixtures by volume ratio
 			var/datum/gas_mixture/G = i
 			var/ratio = G.volume/total_volume
@@ -249,32 +250,3 @@
 			for(var/id in cached_gases)
 				ASSERT_GAS(id,G)
 				G.gases[id][MOLES] = ratio * cached_gases[id][MOLES]
-		var/ratio = volume/total_volume
-		for(var/id in cached_gases)
-			cached_gases[id][MOLES] *= ratio
-		if(!length(cached_gases-GLOB.nonreactive_gases))
-			return
-		reaction_results = new
-		var/temp = temperature
-		var/ener = THERMAL_ENERGY(src)
-		reaction_loop:
-			for(var/r in SSair.gas_reactions)
-				var/datum/gas_reaction/reaction = r
-	
-				var/list/min_reqs = reaction.min_requirements.Copy()
-				if((min_reqs["TEMP"] && temp < min_reqs["TEMP"]) \
-				|| (min_reqs["ENER"] && ener < min_reqs["ENER"]))
-					continue
-				min_reqs -= "TEMP"
-				min_reqs -= "ENER"
-	
-				for(var/id in min_reqs)
-					if(!cached_gases[id] || cached_gases[id][MOLES] < min_reqs[id])
-						continue reaction_loop
-				. |= reaction.react(src, null)
-				if (. & STOP_REACTIONS)
-					break
-		if(.)
-			garbage_collect()
-			if(temperature < TCMB) //just for safety
-				temperature = TCMB
