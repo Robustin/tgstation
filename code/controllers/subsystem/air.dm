@@ -242,6 +242,7 @@ SUBSYSTEM_DEF(air)
 		T.add_atom_colour("#00ff00", TEMPORARY_COLOUR_PRIORITY)
 		#endif
 		T.excited = 1
+		T.breakdown_timer = 0
 		active_turfs |= T
 		if(currentpart == SSAIR_ACTIVETURFS)
 			currentrun |= T

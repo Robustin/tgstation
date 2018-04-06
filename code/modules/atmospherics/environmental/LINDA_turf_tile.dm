@@ -13,12 +13,13 @@
 	var/archived_cycle = 0
 	var/current_cycle = 0
 
+
 	//used for mapping and for breathing while in walls (because that's a thing that needs to be accounted for...)
 	//string parsed by /datum/gas/proc/copy_from_turf
 	var/initial_gas_mix = "o2=22;n2=82;TEMP=293.15"
 	//approximation of MOLES_O2STANDARD and MOLES_N2STANDARD pending byond allowing constant expressions to be embedded in constant strings
 	// If someone will place 0 of some gas there, SHIT WILL BREAK. Do not do that.
-	var/last_react = 0
+	var/breakdown_timer = 0
 
 /turf/open
 	//used for spacewind
@@ -34,8 +35,7 @@
 	var/list/atmos_overlay_types //gas IDs of current active gas overlays
 	var/static/aa1
 	var/static/aa2
-	var/static/aa3
-	var/static/aa4
+
 /turf/open/Initialize()
 	if(!blocks_air)
 		air = new
@@ -89,10 +89,14 @@
 /turf/proc/archive()
 	temperature_archived = temperature
 
-/turf/open/archive()
+/turf/open/archive(firecount)
 	air.archive()
-	archived_cycle = SSair.times_fired
 	temperature_archived = temperature
+	if(firecount)
+		archived_cycle = firecount
+	else
+		archived_cycle = SSair.times_fired
+
 
 /////////////////////////GAS OVERLAYS//////////////////////////////
 
@@ -156,10 +160,8 @@
 
 /turf/open/process_cell(fire_count)
 	if(archived_cycle < fire_count) //archive self if not already done
-		archive()
-
+		archive(fire_count)
 	current_cycle = fire_count
-
 	//cache for sanic speed
 	var/list/adjacent_turfs = atmos_adjacent_turfs
 	var/adjacent_turfs_length = LAZYLEN(adjacent_turfs)
@@ -169,38 +171,87 @@
 		adjacent_turfs_length++
 
 	var/datum/gas_mixture/our_air = air
-
+	var/tls = 0
 	for(var/t in adjacent_turfs)
 		var/turf/open/enemy_tile = t
 
 		if(fire_count <= enemy_tile.current_cycle)
 			continue
-		enemy_tile.archive()
-		var/difference = air.share(enemy_tile.air, adjacent_turfs_length)
+		enemy_tile.archive(fire_count)
+		var/difference = our_air.share(enemy_tile.air, adjacent_turfs_length)
 		if(abs(difference) > MINIMUM_AIR_RATIO_TO_MOVE)
-			aa1++
 			if(difference > 0)
 				consider_pressure_difference(enemy_tile, difference)
 			else
 				enemy_tile.consider_pressure_difference(src, -difference)
-		if(air.last_share > MINIMUM_AIR_RATIO_TO_SUSPEND)
-			aa2++
-			last_react = 1
+		var/als = our_air.last_share
+		tls = max(tls, als)
+		if(als > MINIMUM_MOLES_DELTA_TO_MOVE)
+			breakdown_timer = 0
 			if(!enemy_tile.excited)
 				SSair.add_to_active(enemy_tile)
+		else
+			breakdown_timer += 0.25
+
+
 	if (planet_atmos) //share our air with the "atmosphere" "above" the turf
 		var/datum/gas_mixture/G = new
 		G.copy_from_turf(src)
 		G.archive()
 		var/difference = our_air.share(G, adjacent_turfs_length)
 		if(abs(difference) > MINIMUM_AIR_RATIO_TO_MOVE)
-			last_react = 1
-	if(last_react)
-		last_react = our_air.react(src)
-		update_visuals()
-	else
+			breakdown_timer = 0
+
+	if(our_air.react(src))
+		breakdown_timer = 0
+	else if(!tls)
 		SSair.remove_from_active(src)
 		our_air.garbage_collect()
+	update_visuals()
+
+	if(breakdown_timer >= EXCITED_GROUP_BREAKDOWN_CYCLES)
+		aa1++
+		var/list/group = list(src)
+		var/list/newbies = list()
+		var/datum/gas_mixture/A = new
+		var/list/A_gases = A.gases
+		for(var/AT in adjacent_turfs)
+			var/turf/open/T = AT
+			if(T.breakdown_timer)
+				A.merge(T.air)
+				group|=T
+				T.breakdown_timer = 0
+				for(var/AT2 in T.atmos_adjacent_turfs)
+					var/turf/open/T2 = AT2
+					if(T2 != src && T2.breakdown_timer)
+						A.merge(T2.air)
+						group |= T2
+						newbies |= T2
+						T2.breakdown_timer = 0
+		var/list/babies = list()
+		while(newbies.len)
+			for(var/ATN in newbies)
+				var/turf/open/TN = ATN
+				for(var/ATX in TN.atmos_adjacent_turfs)
+					var/turf/open/TX = ATX
+					if(TX.breakdown_timer && !(TX in group))
+						A.merge(TX.air)
+						group += TX
+						babies += TX
+						TX.breakdown_timer = 0
+			newbies = babies.Copy()
+			babies.Cut()
+		for(var/id in A_gases)
+			A_gases.gascomp |= GLOB.meta_gas_info[id][META_GAS_FLAG]
+			A_gases[id][MOLES] /= group.len
+		for(var/G in group)
+			var/turf/open/TG = G
+			var/datum/gas_mixture/turf_air = TG.air
+			turf_air.copy_from(A)
+			TG.breakdown_timer = 0
+			TG.update_visuals()
+			SSair.remove_from_active(TG)
+			turf_air.garbage_collect()
 
 //////////////////////////SPACEWIND/////////////////////////////
 
