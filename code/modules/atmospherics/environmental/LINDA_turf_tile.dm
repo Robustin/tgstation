@@ -208,7 +208,7 @@
 		SSair.remove_from_active(src)
 		our_air.garbage_collect()
 	update_visuals()
-/*
+
 	if(breakdown_timer >= EXCITED_GROUP_BREAKDOWN_CYCLES)
 		var/list/group = list(src)
 		var/list/newbies = list()
@@ -251,7 +251,7 @@
 			TG.breakdown_timer = 0
 			TG.update_visuals()
 			SSair.remove_from_active(TG)
-			turf_air.garbage_collect()*/
+			turf_air.garbage_collect()
 
 //////////////////////////SPACEWIND/////////////////////////////
 
