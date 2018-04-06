@@ -29,7 +29,6 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 	var/last_share = 0
 	var/gascomp = NO_GAS
 	var/list/reaction_results
-	var/BULLSHIT = ""
 
 /datum/gas_mixture/New(volume)
 	gases = new
@@ -318,9 +317,10 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 	if(abs_temperature_delta > MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER)
 		var/old_self_heat_capacity = heat_capacity()
 		var/old_sharer_heat_capacity = sharer.heat_capacity()
-		var/new_self_heat_capacity = old_self_heat_capacity
-		var/new_sharer_heat_capacity = old_sharer_heat_capacity
-
+		var/new_self_heat_capacity = 0
+		var/new_sharer_heat_capacity = 0
+		var/heat_capacity_self_to_sharer = 0
+		var/heat_capacity_sharer_to_self = 0
 		var/us = gascomp
 		var/them = sharer.gascomp
 		var/g = us ^ them
@@ -347,29 +347,31 @@ GLOBAL_LIST_INIT(nonreactive_gases, typecacheof(list(/datum/gas/oxygen, /datum/g
 			if(delta)
 				var/gas_heat_capacity = delta * gas[GAS_META][META_GAS_SPECIFIC_HEAT]
 				if(delta > 0)
-					new_self_heat_capacity -= gas_heat_capacity
-					new_sharer_heat_capacity += gas_heat_capacity
+					heat_capacity_self_to_sharer += gas_heat_capacity
 				else
-					new_self_heat_capacity += gas_heat_capacity
-					new_sharer_heat_capacity -= gas_heat_capacity
+					heat_capacity_sharer_to_self -= gas_heat_capacity
+
 				gas[MOLES]			-= delta
 				sharergas[MOLES]	+= delta
 				moved_moles			+= delta
 				abs_moved_moles		+= abs(delta)
+
 			our_total += gas[MOLES]
 			sharer_total += sharergas[MOLES]
 
+		new_self_heat_capacity = old_self_heat_capacity + heat_capacity_sharer_to_self - heat_capacity_self_to_sharer
+		new_sharer_heat_capacity = old_sharer_heat_capacity + heat_capacity_self_to_sharer - heat_capacity_sharer_to_self
 		//transfer of thermal energy (via changed heat capacity) between self and sharer
 		if(new_self_heat_capacity > MINIMUM_HEAT_CAPACITY)
-			temperature = (old_self_heat_capacity*temperature)/new_self_heat_capacity
+			temperature = (old_self_heat_capacity*temperature - heat_capacity_self_to_sharer*old_temp + heat_capacity_sharer_to_self*old_sharer_temp)/new_self_heat_capacity
 
 		if(new_sharer_heat_capacity > MINIMUM_HEAT_CAPACITY)
-			sharer.temperature = (old_sharer_heat_capacity*sharer.temperature)/new_sharer_heat_capacity
+			sharer.temperature = (old_sharer_heat_capacity*sharer.temperature-heat_capacity_sharer_to_self*old_sharer_temp + heat_capacity_self_to_sharer*old_temp)/new_sharer_heat_capacity
 			if(abs(new_sharer_heat_capacity/old_sharer_heat_capacity - 1) < 0.1) // <10% change in sharer heat capacity
 				if(old_sharer_heat_capacity > MINIMUM_HEAT_CAPACITY && old_self_heat_capacity > MINIMUM_HEAT_CAPACITY)
 					var/heat = OPEN_HEAT_TRANSFER_COEFFICIENT*(old_temp - old_sharer_temp)*(old_self_heat_capacity*old_sharer_heat_capacity/(old_self_heat_capacity+old_sharer_heat_capacity))
 					temperature = max(temperature - heat/old_self_heat_capacity, TCMB)
-					sharer.temperature = max(sharer.temperature + heat/old_sharer_heat_capacity, TCMB)
+					sharer.temperature = max(old_sharer_temp + heat/old_sharer_heat_capacity, TCMB)
 
 	else
 		var/us = gascomp

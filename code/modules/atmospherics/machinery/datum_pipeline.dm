@@ -250,3 +250,6 @@
 			for(var/id in cached_gases)
 				ASSERT_GAS(id,G)
 				G.gases[id][MOLES] = ratio * cached_gases[id][MOLES]
+		var/ratio = volume/total_volume
+		for(var/id in cached_gases)
+			cached_gases[id][MOLES] *= ratio
