@@ -215,6 +215,7 @@
 		var/list/newbies = list()
 		var/datum/gas_mixture/A = new
 		var/list/A_gases = A.gases
+		A.merge(our_air)
 		for(var/AT in adjacent_turfs)
 			var/turf/open/T = AT
 			if(T.breakdown_timer)
@@ -242,7 +243,7 @@
 			newbies = babies.Copy()
 			babies.Cut()
 		for(var/id in A_gases)
-			A_gases.gascomp |= GLOB.meta_gas_info[id][META_GAS_FLAG]
+			A.gascomp |= GLOB.meta_gas_info[id][META_GAS_FLAG]
 			A_gases[id][MOLES] /= group.len
 		for(var/G in group)
 			var/turf/open/TG = G
