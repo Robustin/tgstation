@@ -260,6 +260,7 @@
 	report_weights[config_tag] = 0 //Prevent the current mode from being falsely selected.
 	var/list/reports = list()
 	var/Count = 0 //To compensate for missing correct report
+	report_weights[config_tag] = 0 // To make sure the actual mode doesn't show up twice
 	if(prob(65)) // 65% chance the actual mode will appear on the list
 		reports += config.mode_reports[config_tag]
 		Count++
